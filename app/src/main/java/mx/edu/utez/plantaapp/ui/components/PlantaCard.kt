@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import mx.edu.utez.plantaapp.data.remote.dto.PlantaDto
+import mx.edu.utez.plantaapp.util.formatearFechaRiego
 import java.time.LocalDate
 
 @Composable
@@ -32,7 +33,7 @@ fun PlantaCard(
     onRegarClick: () -> Unit
 ) {
     val hoy = LocalDate.now().toString()
-    val necesitaRiego = planta.proximoRiego != null && planta.proximoRiego <= hoy
+    val necesitaRiego = planta.proximoRiego != null && planta.proximoRiego.substringBefore("T") <= hoy
 
     val bitmap = remember(planta.imagenBase64) {
         try {
@@ -107,7 +108,11 @@ fun PlantaCard(
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = if (necesitaRiego) "¡Regar hoy!" else "Próximo riego: ${planta.proximoRiego ?: "Pronto"}",
+                        text = if (necesitaRiego) {
+                            "¡Regar hoy!"
+                        } else {
+                            "Próximo riego: ${planta.proximoRiego?.formatearFechaRiego() ?: "Pronto"}"
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = if (necesitaRiego) Color(0xFFC62828) else Color(0xFF2E7D32),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)

@@ -17,11 +17,14 @@ interface ApiService {
 
     // --- PLANTAS ---
     @Multipart
-    @POST("api/plantas/identificar")
-    suspend fun identificarPlanta(
+    @POST("api/plantas/analizar")
+    suspend fun analizarPlanta(
         @Part("usuarioId") usuarioId: RequestBody,
         @Part imagen: MultipartBody.Part
     ): Response<PlantaDto>
+
+    @POST("api/plantas/guardar")
+    suspend fun guardarPlanta(@Body planta: PlantaDto): Response<PlantaDto>
 
     @GET("api/plantas/usuario/{usuarioId}")
     suspend fun obtenerPlantas(@Path("usuarioId") usuarioId: Long): Response<List<PlantaDto>>

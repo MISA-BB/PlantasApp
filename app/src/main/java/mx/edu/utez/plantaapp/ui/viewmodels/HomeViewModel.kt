@@ -12,8 +12,10 @@ import mx.edu.utez.plantaapp.data.repository.PlantaRepository
 
 data class HomeUiState(
     val plantas: List<PlantaDto> = emptyList(),
+    val plantaPrevia: PlantaDto? = null,
     val isLoading: Boolean = false,
     val isAnalyzing: Boolean = false,
+    val isSaving: Boolean = false,
     val error: String? = null,
     val mensajeExito: String? = null
 )
@@ -45,21 +47,16 @@ class HomeViewModel(
         }
     }
 
-    fun analizarYGuardarPlanta(
-        usuarioId: Long,
-        imagenBase64: String,
-        onPlantaCreada: (PlantaDto) -> Unit
-    ) {
+    // Paso 1: Analiza con IA y guarda el resultado en plantaPrevia (sin guardar aún en MySQL)
+    fun analizarPlantaPrevia(usuarioId: Long, imagenBase64: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isAnalyzing = true, error = null)
             plantaRepository.analizarPlanta(usuarioId, imagenBase64).fold(
-                onSuccess = { nuevaPlanta ->
+                onSuccess = { plantaDetectada ->
                     _uiState.value = _uiState.value.copy(
                         isAnalyzing = false,
-                        plantas = listOf(nuevaPlanta) + _uiState.value.plantas,
-                        mensajeExito = "¡Planta identificada: ${nuevaPlanta.nombreComun}!"
+                        plantaPrevia = plantaDetectada
                     )
-                    onPlantaCreada(nuevaPlanta)
                 },
                 onFailure = { e ->
                     _uiState.value = _uiState.value.copy(
@@ -69,6 +66,37 @@ class HomeViewModel(
                 }
             )
         }
+    }
+
+    // Paso 2: Guarda en MySQL la planta que el usuario revisó y confirmó
+    fun confirmarYGuardarPlanta(
+        plantaConfirmada: PlantaDto,
+        onPlantaGuardada: (PlantaDto) -> Unit
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSaving = true, error = null)
+            plantaRepository.guardarPlanta(plantaConfirmada).fold(
+                onSuccess = { nuevaPlanta ->
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        plantaPrevia = null,
+                        plantas = listOf(nuevaPlanta) + _uiState.value.plantas,
+                        mensajeExito = "¡Planta guardada: ${nuevaPlanta.nombreComun}!"
+                    )
+                    onPlantaGuardada(nuevaPlanta)
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isSaving = false,
+                        error = e.message
+                    )
+                }
+            )
+        }
+    }
+
+    fun descartarPlantaPrevia() {
+        _uiState.value = _uiState.value.copy(plantaPrevia = null, error = null)
     }
 
     fun regarPlantaRapido(plantaId: Long, usuarioId: Long) {

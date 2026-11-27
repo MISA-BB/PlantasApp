@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import mx.edu.utez.plantaapp.ui.viewmodels.PlantaDetailViewModel
+import mx.edu.utez.plantaapp.util.formatearFechaRiego
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -228,8 +229,8 @@ fun PlantaDetailScreen(
                     InfoCard("Calendario de Riego", buildString {
                         append("Frecuencia: ${planta.frecuenciaRiegoTexto ?: "Cada ${planta.frecuenciaRiegoDias} días"}\n")
                         append("Cantidad de agua: ${planta.cantidadAgua ?: "Moderada"}\n")
-                        append("Último riego: ${planta.ultimoRiego ?: "Hoy"}\n")
-                        append("Próximo riego: ${planta.proximoRiego ?: "Pendiente"}")
+                        append("Último riego: ${planta.ultimoRiego?.formatearFechaRiego() ?: "Hoy"}\n")
+                        append("Próximo riego: ${planta.proximoRiego?.formatearFechaRiego() ?: "Pendiente"}")
                     })
 
                     if (!planta.descripcion.isNullOrBlank()) {

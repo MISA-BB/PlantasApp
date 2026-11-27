@@ -18,14 +18,27 @@ class PlantaRepository(
             val imageBody = bytes.toRequestBody("image/jpeg".toMediaType())
             val imagePart = MultipartBody.Part.createFormData("imagen", "planta.jpg", imageBody)
 
-            val response = api.identificarPlanta(userIdBody, imagePart)
+            val response = api.analizarPlanta(userIdBody, imagePart)
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("No se pudo identificar la planta (${response.code()})"))
+                Result.failure(Exception("No se pudo analizar la planta (${response.code()})"))
             }
         } catch (e: Exception) {
             Result.failure(Exception("Error al analizar la imagen: ${e.message}"))
+        }
+    }
+
+    suspend fun guardarPlanta(planta: PlantaDto): Result<PlantaDto> {
+        return try {
+            val response = api.guardarPlanta(planta)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception("No se pudo guardar la planta (${response.code()})"))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception("Error al guardar la planta: ${e.message}"))
         }
     }
 
