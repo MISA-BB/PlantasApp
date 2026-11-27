@@ -26,7 +26,7 @@ class PlantaDetailViewModel(
 
     fun cargarDetalle(usuarioId: Long, plantaId: Long) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             plantaRepository.obtenerPlantas(usuarioId).fold(
                 onSuccess = { lista ->
                     val encontrada = lista.find { it.id == plantaId }
@@ -45,9 +45,31 @@ class PlantaDetailViewModel(
         }
     }
 
+    fun actualizarPlanta(plantaEditada: PlantaDto, onSuccess: () -> Unit = {}) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, mensaje = null)
+            plantaRepository.actualizarPlanta(plantaEditada).fold(
+                onSuccess = { actualizada ->
+                    _uiState.value = _uiState.value.copy(
+                        planta = actualizada,
+                        isLoading = false,
+                        mensaje = "Planta actualizada correctamente"
+                    )
+                    onSuccess()
+                },
+                onFailure = { e ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = e.message
+                    )
+                }
+            )
+        }
+    }
+
     fun regarPlanta(plantaId: Long) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null, mensaje = null)
             plantaRepository.regarPlanta(plantaId).fold(
                 onSuccess = { actualizada ->
                     _uiState.value = _uiState.value.copy(
@@ -68,7 +90,7 @@ class PlantaDetailViewModel(
 
     fun eliminarPlanta(plantaId: Long, onDeleted: () -> Unit) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             plantaRepository.eliminarPlanta(plantaId).fold(
                 onSuccess = {
                     _uiState.value = _uiState.value.copy(isLoading = false)

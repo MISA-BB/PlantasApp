@@ -15,12 +15,13 @@ class AuthRepository(
     suspend fun login(correo: String, password: String): Result<UsuarioDto> {
         return try {
             val response = api.login(LoginRequestDto(correo.trim(), password))
-            if (response.isSuccessful && response.body() != null) {
-                val usuario = response.body()!!
+            val usuario = response.body()?.usuario
+            if (response.isSuccessful && usuario != null) {
                 sessionManager.saveSession(usuario)
                 Result.success(usuario)
             } else {
-                Result.failure(Exception("Correo o contraseña incorrectos"))
+                val msg = response.body()?.message ?: "Correo o contraseña incorrectos"
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
             Result.failure(Exception("Error de conexión con el servidor: ${e.message}"))
@@ -31,12 +32,13 @@ class AuthRepository(
         return try {
             val nuevo = UsuarioDto(fullName = fullName.trim(), correo = correo.trim(), password = password)
             val response = api.register(nuevo)
-            if (response.isSuccessful && response.body() != null) {
-                val usuario = response.body()!!
+            val usuario = response.body()?.usuario
+            if (response.isSuccessful && usuario != null) {
                 sessionManager.saveSession(usuario)
                 Result.success(usuario)
             } else {
-                Result.failure(Exception("No se pudo registrar. Verifica si el correo ya existe."))
+                val msg = response.body()?.message ?: "No se pudo registrar. Verifica si el correo ya existe."
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
             Result.failure(Exception("Error de conexión con el servidor: ${e.message}"))

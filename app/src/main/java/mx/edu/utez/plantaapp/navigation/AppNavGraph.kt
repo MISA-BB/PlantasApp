@@ -73,9 +73,10 @@ fun AppNavGraph(container: AppContainer) {
             onNavigate = { route ->
                 if (currentRoute != route) {
                     navController.navigate(route) {
-                        popUpTo(AppRoutes.Home.route) { saveState = true }
+                        popUpTo(navController.graph.startDestinationId) {
+                            inclusive = (route == AppRoutes.Home.route)
+                        }
                         launchSingleTop = true
-                        restoreState = true
                     }
                 }
             }

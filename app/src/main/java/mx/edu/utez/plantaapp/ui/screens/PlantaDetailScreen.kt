@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -33,6 +34,7 @@ fun PlantaDetailScreen(
 ) {
     val uiState by detailViewModel.uiState.collectAsState()
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(plantaId) {
         detailViewModel.cargarDetalle(usuarioId, plantaId)
@@ -61,6 +63,44 @@ fun PlantaDetailScreen(
         )
     }
 
+    val plantaActual = uiState.planta
+    if (showEditDialog && plantaActual != null) {
+        var nuevoNombre by remember { mutableStateOf(plantaActual.nombreComun) }
+
+        AlertDialog(
+            onDismissRequest = { showEditDialog = false },
+            title = { Text("Editar nombre") },
+            text = {
+                OutlinedTextField(
+                    value = nuevoNombre,
+                    onValueChange = { nuevoNombre = it },
+                    label = { Text("Nombre de la planta") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val limpio = nuevoNombre.trim()
+                        if (limpio.isNotEmpty()) {
+                            val actualizada = plantaActual.copy(nombreComun = limpio)
+                            showEditDialog = false
+                            detailViewModel.actualizarPlanta(actualizada)
+                        }
+                    }
+                ) {
+                    Text("Guardar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,6 +111,15 @@ fun PlantaDetailScreen(
                     }
                 },
                 actions = {
+                    if (uiState.planta != null) {
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = "Editar nombre",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(
                             Icons.Default.Delete,
@@ -122,11 +171,25 @@ fun PlantaDetailScreen(
                         )
                     }
 
-                    Text(
-                        text = planta.nombreComun,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = planta.nombreComun,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(onClick = { showEditDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = "Editar nombre",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
 
                     if (!planta.nombreCientifico.isNullOrBlank()) {
                         Text(
@@ -151,6 +214,14 @@ fun PlantaDetailScreen(
                             text = uiState.mensaje!!,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.SemiBold
+                        )
+                    }
+
+                    if (uiState.error != null) {
+                        Text(
+                            text = uiState.error!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
                         )
                     }
 

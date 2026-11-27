@@ -49,7 +49,7 @@ fun HomeScreen(
                     Column {
                         Text("Mi Jardín", fontWeight = FontWeight.Bold)
                         Text(
-                            text = "Hola, ${usuario.fullName}",
+                            text = "Hola, ${usuario.fullName?.takeIf { it.isNotBlank() } ?: usuario.correo.substringBefore("@")}",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

@@ -44,6 +44,16 @@ fun EscanearPlantaScreen(
 
     var previewBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var imagenBase64 by remember { mutableStateOf<String?>(null) }
+    // Bloqueo síncrono inmediato contra doble toque
+    var enviandoLocal by remember { mutableStateOf(false) }
+
+    LaunchedEffect(uiState.isAnalyzing) {
+        if (!uiState.isAnalyzing) {
+            enviandoLocal = false
+        }
+    }
+
+    val bloqueado = uiState.isAnalyzing || enviandoLocal
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -129,7 +139,7 @@ fun EscanearPlantaScreen(
             ) {
                 OutlinedButton(
                     onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                    enabled = !uiState.isAnalyzing,
+                    enabled = !bloqueado,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.CameraAlt, contentDescription = null)
@@ -139,7 +149,7 @@ fun EscanearPlantaScreen(
 
                 OutlinedButton(
                     onClick = { galleryLauncher.launch("image/*") },
-                    enabled = !uiState.isAnalyzing,
+                    enabled = !bloqueado,
                     modifier = Modifier.weight(1f)
                 ) {
                     Icon(Icons.Default.PhotoLibrary, contentDescription = null)
@@ -158,18 +168,25 @@ fun EscanearPlantaScreen(
 
             Button(
                 onClick = {
+                    if (bloqueado) return@Button
                     val uId = usuario.id
                     val b64 = imagenBase64
                     if (uId != null && b64 != null) {
-                        homeViewModel.analizarYGuardarPlanta(uId, b64, onPlantaAnalizada)
+                        enviandoLocal = true
+                        homeViewModel.analizarYGuardarPlanta(uId, b64) { plantaGuardada ->
+                            imagenBase64 = null
+                            previewBitmap = null
+                            enviandoLocal = false
+                            onPlantaAnalizada(plantaGuardada)
+                        }
                     }
                 },
-                enabled = imagenBase64 != null && !uiState.isAnalyzing,
+                enabled = imagenBase64 != null && !bloqueado,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)
             ) {
-                if (uiState.isAnalyzing) {
+                if (bloqueado) {
                     CircularProgressIndicator(
                         color = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(22.dp)
@@ -185,7 +202,7 @@ fun EscanearPlantaScreen(
 }
 
 private fun bitmapToBase64(bitmap: Bitmap): String {
-    val maxDim = 800
+    val maxDim = 512
     val scale = minOf(maxDim.toFloat() / bitmap.width, maxDim.toFloat() / bitmap.height, 1f)
     val resized = Bitmap.createScaledBitmap(
         bitmap,
@@ -194,7 +211,7 @@ private fun bitmapToBase64(bitmap: Bitmap): String {
         true
     )
     val outputStream = ByteArrayOutputStream()
-    resized.compress(Bitmap.CompressFormat.JPEG, 80, outputStream)
+    resized.compress(Bitmap.CompressFormat.JPEG, 65, outputStream)
     return Base64.encodeToString(outputStream.toByteArray(), Base64.NO_WRAP)
 }
 

@@ -34,7 +34,7 @@ class SessionManager(private val context: Context) {
         val id = usuario.id ?: return
         context.dataStore.edit { prefs ->
             prefs[KEY_USER_ID] = id
-            prefs[KEY_FULL_NAME] = usuario.fullName
+            prefs[KEY_FULL_NAME] = usuario.fullName ?: ""
             prefs[KEY_CORREO] = usuario.correo
         }
     }
